@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<!-- 
+ Created by Marcus Wynwood on the 21st of August 2013 at about 7:30pm or so, before tea.
+ 
+ Free for personal use.
+ w: http://www.mwynwood.com
+-->
+<html>
+    <head>
+        <title>Typing Speed Test</title>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" ></script>
+		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+		<style>
+			@import url(http://fonts.googleapis.com/css?family=Special+Elite);
+			@import url(http://fonts.googleapis.com/css?family=Open+Sans);
+			* {
+				padding: 0px;
+				margin: 0px;
+			}
+			body {
+				text-align: center;
+				font-family: 'Open Sans', sans-serif;
+				font-size: 14px;
+			}
+			h1 {
+				font-family: 'Special Elite', serif;
+				font-size: 40px;
+				padding-top: 7px;
+			}
+			td {
+				vertical-align: top;
+				text-align: center;
+				padding: 10px;
+			}
+			#header {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 50px;
+				background-color: #dddddd;
+			}
+			#content {
+				position: fixed;
+				top: 50px;
+				bottom: 50px;
+				left: 0;
+				right: 0;
+				background-color: #eeeeee;
+				overflow: auto;
+				margin-left:auto; 
+				margin-right:auto;
+			}
+			#footer {
+				position: fixed;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				height: 60px;
+				background-color: #dddddd;
+				text-align: center;
+			}
+			#footer table {
+				margin-left:auto; 
+				margin-right:auto;
+			}
+			#footer .label {
+				padding-right: 5px;
+				font-weight: bold;
+			}
+			#footer button {
+				-webkit-box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+				-moz-box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+				box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+				color:#333;
+				background-color:#FA2;
+				border-radius:5px;
+				-moz-border-radius:5px;
+				-webkit-border-radius:5px;
+				border:none;
+				font-family: inherit;
+				font-size: 14px;
+				font-weight: bold;
+				height:32px;
+				padding:4px 16px;
+				text-shadow:#FE6 0 1px 0;
+			}
+			#textarea {
+				/* font-family: monospace; */
+				font-family: inherit;
+				margin: 5px;
+				float: left;
+				width: 48%;
+				height: 90%;
+			}
+			#testWords {
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-khtml-user-select: none;
+				-moz-user-select: -moz-none;
+				-ms-user-select: none;
+				user-select: none;
+				text-align: left;
+				border: 1px solid black;
+				padding: 5px;
+				margin: 5px;
+				background: white;
+				float: left;
+				width: 48%;
+			}
+			#socialmedia {
+				position: fixed;
+				top: 10px;
+				right: 10px;
+			}
+			#credit {
+				text-align: right;
+				margin: 30px;
+				font-style:italic;
+				font-size: 10px;
+			}
+			.correct {
+				background: #CAFFD8;
+			}
+			.incorrect {
+				background: #FFC8C8;
+			}
+        </style>
+        <script>
+		$(function() {
+
+			// Cool tool tip
+			$( "#button" ).tooltip({
+				show: {
+					effect: "slideDown",
+					delay: 150
+				}
+			});
+						
+			var timeLimit = 0;
+			var backspaceCount = 0;
+			var testWords = $('#testWords').text().split(' '); // an array of the test words seperated by a space
+			
+			// DUDE, THEY CLICKED THE BUTTON!
+			$('#button').click( function() {
+				$('#button').hide();
+				$('#textarea').attr('disabled', false).focus();
+				
+				timeLimit = $("#timer").val(); // set the time limit form the textbox
+				$('#timer').attr('disabled', true); // can't change the timer now, mwah ha haaaa!
+				
+				// reset the interface
+				$('#textarea').val("");
+				$("#totalChars").html("0");
+				$("#totalWords").html("0");
+				$("#backspaceCount").html("0");
+				$("#wordsPerMinute").html("0");
+				$("#errors").html("0");		
+				$("#accuracy").html("0");		
+				
+				var count = timeLimit; // the counter used in the timer function. Don't wanna mess up 'timeLimit' cause I used it later
+				var counter = setInterval(timer, 1000); //1000 will timer() function run it every 1 second
+
+				function timer() {
+					count = count - 1; // tick tock tick tock
+					if (count <= 0) {
+						// Time's up!
+						$("#timer").val(timeLimit); // put the timer back to the starting value
+						$('#textarea').attr('disabled', true); // disable the textarea
+						$('#button').show(); // show the 'start' button again
+						$('#timer').attr('disabled', false); // let users type in the timer text box again
+						clearInterval(counter); // stops setInterval
+						
+						// Setup the results dialog
+						$("#results").html("<p style='font-weight:bold;'>Over "+timeLimit+" seconds, you typed " + $("#wordsPerMinute").html() + " words per minute with " + $("#accuracy").html() + " accuracy</p>");
+						$( "#dialog-message" ).dialog({
+						  modal: true,
+						  width: 700,
+						  buttons: {
+							Ok: function() {
+							  $( this ).dialog( "close" );
+							}
+						  }
+						});
+						
+						return;
+					}
+					$("#timer").val(count);
+				} // end of Timer function
+			}); //end button click
+			
+			// DUDE, THEY PRESSED A KEY! DEAL WITH IT!
+			$('#textarea').keyup( function(e) {
+				$("#totalChars").html($("#textarea").val().length);
+
+				var words = $('#textarea').val().split(' '); // make an array from the users typingness split by space bar presses
+				wordCount = words.length; // how many words did they type?
+				if (words[wordCount - 1].length === 0) { --wordCount; }
+				if (words[0].length === 0) { --wordCount; }	
+				$("#totalWords").html(wordCount);
+				
+				// Count Backspace or Delete key presses
+				if(e.keyCode == 8 || e.keyCode == 46) {
+					backspaceCount++;
+					$("#backspaceCount").html(backspaceCount);
+				}
+				
+				// Words per minute
+				var wpm = (wordCount / timeLimit) * 60;
+				$("#wordsPerMinute").html(wpm);
+
+				var userWords = $('#textarea').val().split(' '); // an array of the typed words
+				
+				var errors = 0;
+				var correct = 0;
+				testWordsFormatted = testWords.slice(); // make a copy of the words to format
+				
+				for(var i=0; i<userWords.length; i++) {
+					if(userWords[i] == testWords[i]) {
+						// got it right!
+						correct++;
+						// highlight word in green
+						testWordsFormatted[i] = "<span class='correct'>" + testWords[i] + "</span>";
+					} else {
+						// got it wrong!
+						errors++;
+						// highlight word in red
+						testWordsFormatted[i] = "<span class='incorrect'>" + testWords[i] + "</span>";
+					}
+					$("#testWords").html(testWordsFormatted.join(' '));
+				}
+				var percent = ((correct / userWords.length) * 100).toFixed(2); // two decimal places
+				//$("#errorCount").html(percent + "%  (<em>" + errors + " errors</em>)");
+				$("#errors").html(errors);
+				$("#accuracy").html(percent + "%");
+			}); // end keyup			
+
+		});
+        </script>
+    </head>
+	
+    <body>
+	
+		<div id="header">
+			<h1>Typing Speed Test</h1>
+		</div> <!-- top -->
+	
+        <div id="content">
+			<textarea id="textarea" disabled></textarea>
+			<!-- testWords must be on one line with no carriage returns, or it'll bugger up I tell ya! -->
+			<p id="testWords">No one would have believed in the last years of the nineteenth century that this world was being watched keenly and closely by intelligences greater than man's and yet as mortal as his own; that as men busied themselves about their various concerns they were scrutinised and studied, perhaps almost as narrowly as a man with a microscope might scrutinise the transient creatures that swarm and multiply in a drop of water.  With infinite complacency men went to and fro over this globe about their little affairs, serene in their assurance of their empire over matter.  It is possible that the infusoria under the microscope do the same.  No one gave a thought to the older worlds of space as sources of human danger, or thought of them only to dismiss the idea of life upon them as impossible or improbable.  It is curious to recall some of the mental habits of those departed days.  At most terrestrial men fancied there might be other men upon Mars, perhaps inferior to themselves and ready to welcome a missionary enterprise.  Yet across the gulf of space, minds that are to our minds as ours are to those of the beasts that perish, intellects vast and cool and unsympathetic, regarded this earth with envious eyes, and slowly and surely drew their plans against us.  And early in the twentieth century came the great disillusionment. The planet Mars, I scarcely need remind the reader, revolves about the sun at a mean distance of 140,000,000 miles, and the light and heat it receives from the sun is barely half of that received by this world. It must be, if the nebular hypothesis has any truth, older than our world; and long before this earth ceased to be molten, life upon its surface must have begun its course.  The fact that it is scarcely one seventh of the volume of the earth must have accelerated its cooling to the temperature at which life could begin.  It has air and water and all that is necessary for the support of animated existence.</p>
+			<p id="credit">The War of the Worlds by H. G. Wells<br /><a href="http://www.gutenberg.org/ebooks/36" target="_blank">http://www.gutenberg.org/ebooks/36</a></p>
+			<p><a href="#" onclick='$( "#dialog-about" ).dialog({ width: 600, modal: true });'>About Typing Speed Test</a></p>
+        </div> <!--  end content -->
+		
+		<div id="footer">
+			<table>
+				<tr>
+					<td><span class="label">Seconds</span><br /><input type="number" min="0" max="10000" size="3" value="30" id="timer" /></td>
+					<td><span class="label">Characters</span><br /><span id="totalChars">0</span></td>
+					<td><span class="label">Words</span><br /><span id="totalWords">0</span></td>
+					<td><span class="label">Backspace</span><br /><span id="backspaceCount">0</span></td>
+					<td><span class="label">Errors</span><br /><span id="errors">0</span></td>
+					<td><span class="label">WPM</span><br /><span id="wordsPerMinute">0</span></td>
+					<td><span class="label">Accuracy</span><br /><span id="accuracy">0</span></td>
+					<td><p><button id="button" title="Click this button, and START TYPING!">Start Test!</button></p></td>
+				</tr>
+			</table>
+		</div> <!-- end footer -->
+		
+		<div id="socialmedia">
+		  	<a href="https://twitter.com/share" class="twitter-share-button" data-url="https://github.com/mwynwood/typingSpeedTest" data-text="Test your #keyboard skills with this #typing #speed test! #TypingSpeedTest" data-via="" data-count="none">Tweet</a>
+			<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+			
+			<a id="fb-share" style='text-decoration:none;border:0;' type="icon_link" onClick="window.open('http://www.facebook.com/sharer.php?s=100&amp;p[title]=Typing Speed Test&amp;p[summary]=Test your typing speed.&amp;p[url]='+encodeURIComponent(location.href)+'','sharer','toolbar=0,status=0,width=580,height=325');" href="javascript: void(0)">Share on Facebook</a>			
+		</div> <!-- end socialmedia -->
+		
+		<div id="dialog-message" title="Time is up!">
+		  <p>Well done, you have completed the typing test.</p>
+		  <div id="results" style="padding:20px;"></div>
+		  <p>Share this page:</p>
+		  
+		  	<a href="https://twitter.com/share" class="twitter-share-button" data-url="https://github.com/mwynwood/typingSpeedTest" data-text="Test your #keyboard skills with this #typing #speed test! #TypingSpeedTest" data-via="" data-count="none">Tweet</a>
+			<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+			
+			<a id="fb-share" style='text-decoration:none;border:0;' type="icon_link" onClick="window.open('http://www.facebook.com/sharer.php?s=100&amp;p[title]=Typing Speed Test&amp;p[summary]=Test your typing speed.&amp;p[url]='+encodeURIComponent(location.href)+'','sharer','toolbar=0,status=0,width=580,height=325');" href="javascript: void(0)">Share on Facebook</a>
+		</div> <!-- end dialog-message -->
+		
+		<div id="dialog-about" title="About Typing Speed Test">
+			<p>"Typing Speed Test" was created by Marcus Wynwood on<br>
+			the 21st of August 2013 at about 7:30pm or so, before tea.</p>
+			<p>&nbsp;</p>
+			<p><a href="https://github.com/mwynwood/typingSpeedTest">https://github.com/mwynwood/typingSpeedTest</a></p>
+			<p>&nbsp;</p>
+			<p>Free for personal use.</p>
+		</div> <!-- end dialog-about -->
+	
+    </body>
+</html>
